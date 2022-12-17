@@ -68,8 +68,12 @@ impl Add<i32> for Value {
     type Output = Value;
     
     fn add(self, other: i32) -> Value {
-        let n: i32 = (Value::val_to_int(self) + other - 1) % 13 + 1;
-        Value::int_to_val(n)
+        if other < 0 {
+            self - other.abs()
+        } else {
+            let n: i32 = (Value::val_to_int(self) + other - 1) % 13 + 1;
+            Value::int_to_val(n)
+        }
     }
 }
 
@@ -77,11 +81,14 @@ impl Sub<i32> for Value {
     type Output = Value;
 
     fn sub(self, other: i32) -> Value {
-        let n: i32 = (Value::val_to_int(self) - other) % 13;
-        let n: i32 = if n <= 0 { n + 13 } else { n };
-        Value::int_to_val(n)
+        if other < 0 {
+            self + other.abs()
+        } else {
+            let n: i32 = (Value::val_to_int(self) - other) % 13;
+            let n: i32 = if n <= 0 { n + 13 } else { n };
+            Value::int_to_val(n)
+        }
     }
-    
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -91,7 +98,7 @@ pub enum FaceType {
     King,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum Suit {
     Clubs,
     Diamonds,
@@ -101,7 +108,36 @@ pub enum Suit {
     Black,
 }
 
-#[derive(Debug)]
+pub struct SuitIter {
+    count: i32,
+}
+
+impl Iterator for SuitIter {
+    type Item = Suit;
+    
+    fn next(&mut self) -> Option<Suit> {
+        use Suit::*;
+        self.count += 1;
+        
+        match self.count {
+            1 => Some(Clubs),
+            2 => Some(Diamonds),
+            3 => Some(Hearts),
+            4 => Some(Spades),
+            _ => None,
+        }
+    }
+}
+
+impl Suit {
+    pub fn suits() -> SuitIter {
+        SuitIter {
+            count: 0,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
 pub enum State {
     Hand,
     Deck,
@@ -125,25 +161,35 @@ impl Card {
         }
     }
 }
-/*
+
+#[derive(Debug)]
 pub struct Deck {
     cards: Vec<Card>,
 }
 
 impl Deck {
-    pub fn new(small: Value, large: Value, num_of_each: u32) -> Deck {
-        let mut v: Vec<Card> = Vec::new();
+    pub fn new() -> Deck {
+        let mut deck: Vec<Card> = Vec::new();
         
+        for s in Suit::suits() {
+            for v in Value::values() {    
+                deck.push(Card::new(v, s, State::Deck));
+            }
+        }
+
+        Deck {
+            cards: deck,
+        }
     }
 }
-*/
+
 #[cfg(test)]
 mod tests {
     use crate::cards::*;
     #[test]
     fn test_card_creation() {
-        println!("***************inside of a test****************");
-        println!("{:?}", Card::new(Value::Number(2), Suit::Spades, State::Deck));
+        //println!("***************inside of a test****************");
+        //println!("{:?}", Card::new(Value::Number(2), Suit::Spades, State::Deck));
         assert_eq!(true, true);
     }
 
@@ -153,7 +199,7 @@ mod tests {
         assert_eq!(Value::Number(10) + 1, Value::Face(FaceType::Jack));
         assert_eq!(Value::Number(10) + 5, Value::Number(2));
         assert_eq!(Value::Number(10) + 4, Value::Ace);
-        assert_eq!(Value::Number(10) + (-1), Value::Number(9));
+        assert_eq!(Value::Number(10) + (-13), Value::Number(10));
     }
 
     #[test]
@@ -161,13 +207,28 @@ mod tests {
         assert_eq!(Value::Number(3) - 1, Value::Number(2));
         assert_eq!(Value::Ace - 4, Value::Number(10));
         assert_eq!(Value::Face(FaceType::King) - 14, Value::Face(FaceType::Queen));
+        assert_eq!(Value::Number(9) - (-1), Value::Number(10));
     }
 
     #[test]
     fn test_value_iterator() {
         for v in Value::values() {
-            println!("{:?}", v);
+            //println!("{:?}", v);
         }
+    }
+
+    #[test]
+    fn test_suit_iterator() {
+        for s in Suit::suits() {
+            //println!("{:?}", s);
+        }
+    }
+
+    #[test]
+    fn test_deck() {
+        let d = Deck::new();
+
+        println!("{:?}", d);
     }
 }
 
