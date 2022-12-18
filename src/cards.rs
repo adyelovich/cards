@@ -160,6 +160,10 @@ impl Card {
             state: st,
         }
     }
+
+    pub has_state(&self, s: State) -> bool {
+        self.state == s
+    }
 }
 
 #[derive(Debug)]
@@ -180,6 +184,32 @@ impl Deck {
         Deck {
             cards: deck,
         }
+    }
+
+    pub fn cards(&self) -> DeckIter {
+        DeckIter {
+            iter: self.cards.iter(),
+        }
+    }
+
+    pub fn deck_size(&self) -> usize {
+        self.cards.len()
+    }
+
+    pub fn card_at(&self, idx: u32) -> &Card {
+        &self.cards[idx]
+    }
+}
+
+pub struct DeckIter<'a> {
+    iter: std::slice::Iter<'a, Card>,
+}
+
+impl<'a> Iterator for DeckIter<'a> {
+    type Item = &'a Card;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
 
@@ -228,7 +258,16 @@ mod tests {
     fn test_deck() {
         let d = Deck::new();
 
-        println!("{:?}", d);
+        //println!("{:?}", d);
+    }
+
+    #[test]
+    fn test_deck_iter() {
+        let d = Deck::new();
+
+        for c in d.cards() {
+            println!("{:?}", c);
+        }
     }
 }
 
